@@ -1,4 +1,4 @@
-from cap_models import __version__
+from captrain import __version__
 
 
 def test_version_string() -> None:

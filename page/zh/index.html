@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapTrain | 统一的 ML 工程层 · 三大接口</title>
+  <meta name="description" content="统一的机器学习工程层，贯穿从数据验证到生产部署的完整模型生命周期。通过同等地位的三大接口对外开放：面向人类工程师的 CLI、面向外部 Agent 的 MCP 工具，以及专为 ML 打造的原生 AI Agent。"/>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              0: '#0A0A0A',
+              1: '#111111',
+              2: '#171717',
+              3: '#1F1F1F',
+              4: '#262626',
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { background: #0A0A0A; }
+    .terminal-block {
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 0;
+    }
+    .terminal-block pre {
+      counter-reset: line;
+    }
+    .terminal-block pre .line::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 2ch;
+      margin-right: 1.5ch;
+      text-align: right;
+      color: #525252;
+    }
+    .card-hover {
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .card-hover:hover {
+      border-color: #404040;
+    }
+    .tab-active {
+      background: #FFFFFF;
+      color: #0A0A0A;
+    }
+    .tab-inactive {
+      background: #1F1F1F;
+      color: #A3A3A3;
+    }
+    .tab-inactive:hover {
+      background: #262626;
+      color: #D4D4D4;
+    }
+    .roadmap-done {
+      background: #FFFFFF;
+    }
+    .roadmap-in-progress {
+      background: #10B981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+    .roadmap-pending {
+      background: #262626;
+      border: 2px solid #404040;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .cursor-blink {
+      animation: blink 1s step-end infinite;
+    }
+  </style>
+  <link rel="alternate" hreflang="en" href="../en/index.html"/>
+  <link rel="alternate" hreflang="fr" href="../fr/index.html"/>
+  <link rel="alternate" hreflang="pt-BR" href="../pt/index.html"/>
+  <link rel="alternate" hreflang="es" href="../es/index.html"/>
+  <link rel="alternate" hreflang="zh-CN" href="../zh/index.html"/>
+  <link rel="alternate" hreflang="x-default" href="../en/index.html"/>
+</head>
+<body class="text-neutral-300 font-sans antialiased">
+
+  <!-- ====== NAVBAR ====== -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-neutral-800/60 bg-[#0A0A0A]/80 backdrop-blur-xl">
+    <div class="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
+      <a href="#" class="flex items-center gap-2.5">
+        <svg viewBox="0 0 140 140" class="w-5 h-5" fill="none">
+          <rect x="0" y="0" width="119" height="19" fill="#FFF"/>
+          <rect x="0" y="0" width="39" height="139" fill="#FFF"/>
+          <rect x="0" y="120" width="119" height="19" fill="#FFF"/>
+          <rect x="120" y="60" width="19" height="19" fill="#E2622A"/>
+        </svg>
+        <span class="font-display text-white font-semibold text-sm tracking-tight">CapTrain</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-[13px] font-medium text-neutral-400">
+        <a href="#features" class="hover:text-white transition-colors">功能</a>
+        <a href="#agent" class="hover:text-white transition-colors">Agent</a>
+        <a href="#lifecycle" class="hover:text-white transition-colors">生命周期</a>
+        <a href="#pricing" class="hover:text-white transition-colors">定价</a>
+        <a href="#roadmap" class="hover:text-white transition-colors">路线图</a>
+        <a href="https://github.com/masteryogo/captrain" class="hover:text-white transition-colors">GitHub</a>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="relative" id="lang-switcher">
+          <button onclick="document.getElementById('lang-dropdown').classList.toggle('hidden')" class="hidden md:flex items-center gap-1 text-neutral-400 hover:text-white text-[13px] font-medium">
+            ZH <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="lang-dropdown" class="hidden absolute right-0 top-full mt-1 bg-[#1F1F1F] border border-[#262626] py-1 min-w-[140px] z-50">
+            <a href="../en/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">English</a>
+            <a href="../fr/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">Français</a>
+            <a href="../pt/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">Português</a>
+            <a href="../es/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">Español</a>
+            <a href="../zh/index.html" class="block px-3 py-1.5 text-[13px] text-white bg-[#262626]">中文</a>
+          </div>
+        </div>
+        <a href="#install" class="hidden md:inline-flex items-center gap-2 rounded-none bg-white text-black px-4 py-1.5 text-[13px] font-semibold hover:bg-neutral-200 transition-colors">
+          安装
+        </a>
+        <button id="mobile-menu-btn" class="md:hidden text-neutral-400 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-neutral-800/60 bg-[#0A0A0A] px-6 py-4 space-y-3 text-sm">
+      <a href="#features" class="block text-neutral-400 hover:text-white">功能</a>
+      <a href="#agent" class="block text-neutral-400 hover:text-white">Agent</a>
+      <a href="#lifecycle" class="block text-neutral-400 hover:text-white">生命周期</a>
+      <a href="#pricing" class="block text-neutral-400 hover:text-white">定价</a>
+      <a href="#roadmap" class="block text-neutral-400 hover:text-white">路线图</a>
+      <a href="https://github.com/masteryogo/captrain" class="block text-neutral-400 hover:text-white">GitHub</a>
+      <div class="border-t border-neutral-800/60 pt-3 mt-1">
+        <p class="text-neutral-500 text-[11px] uppercase tracking-wider mb-2">Language</p>
+        <div class="flex flex-wrap gap-2">
+          <a href="../en/index.html" class="text-[12px] text-neutral-500 hover:text-white px-2 py-1">EN</a>
+          <a href="../fr/index.html" class="text-[12px] text-neutral-500 hover:text-white px-2 py-1">FR</a>
+          <a href="../pt/index.html" class="text-[12px] text-neutral-500 hover:text-white px-2 py-1">PT</a>
+          <a href="../es/index.html" class="text-[12px] text-neutral-500 hover:text-white px-2 py-1">ES</a>
+          <a href="../zh/index.html" class="text-[12px] text-white bg-[#262626] px-2 py-1">ZH</a>
+        </div>
+      </div>
+      <a href="#install" class="block mt-2 bg-white text-black text-center py-2 font-semibold">安装</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ====== HERO ====== -->
+    <section class="pt-32 pb-20 px-6">
+      <div class="mx-auto max-w-3xl text-center">
+        <!-- Core Value Proposition -->
+        <div class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/90 px-4 py-1.5 rounded-full text-xs font-mono text-neutral-300 mb-6 shadow-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Claude Code 编写软件，CapTrain 工程化模型。</span>
+        </div>
+
+        <h1 class="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.05]">
+          CapTrain
+        </h1>
+        <p class="mt-5 text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed">
+          统一的 ML 工程层。<br/>三大接口。
+        </p>
+
+        <!-- Terminal -->
+        <div class="terminal-block mt-10 mx-auto max-w-lg text-left">
+          <div class="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="ml-2 text-[11px] text-neutral-500 font-mono">zsh</span>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span>
+<span class="text-neutral-500">$</span> <span class="cursor-blink text-white">_</span></code></pre>
+        </div>
+
+        <!-- Badges (3 Interfaces + License) -->
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            面向人类的 CLI
+          </span>
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            面向外部 Agent 的 MCP
+          </span>
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            面向 ML 的原生 Agent
+          </span>
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Apache 2.0
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ARCHITECTURE ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-4xl text-center">
+        <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">架构</p>
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">统一架构。三大接口。</h2>
+        <p class="mt-3 text-neutral-400 max-w-xl mx-auto">CLI、MCP 与原生 Agent 均为构建在单一共享核心之上的轻量包装&mdash;&mdash;零重复逻辑。</p>
+
+        <!-- Architecture Diagram -->
+        <div class="terminal-block mt-10 mx-auto max-w-3xl text-left overflow-x-auto">
+          <pre class="px-6 py-5 font-mono text-[12px] md:text-[13px] leading-5 text-neutral-400"><code><span class="text-neutral-500">  ┌─────────────────────────┐</span>
+<span class="text-neutral-500">  │</span> <span class="text-white">人类工程师 (CLI)</span>        <span class="text-neutral-500">│──────┐</span>
+<span class="text-neutral-500">  │</span> <span class="text-neutral-400">cap data / train / eval</span> <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  └─────────────────────────┘</span>      <span class="text-neutral-500">│</span>      <span class="text-neutral-500">┌──────────────────────────────────┐</span>
+<span class="text-neutral-500">  ┌─────────────────────────┐</span>      <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span> <span class="text-white">Core Toolkit (共享核心)</span>         <span class="text-neutral-500">│</span>        <span class="text-neutral-500">┌─────────────────┐</span>
+<span class="text-neutral-500">  │</span> <span class="text-white">外部 Agent (MCP 工具)</span>   <span class="text-neutral-500">│─────┼─────►│</span> • <span class="text-neutral-300">data</span> (inspect/validate/prep)   <span class="text-neutral-500">│</span>        <span class="text-neutral-500">│</span> <span class="text-white">生态集成</span>        <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  │</span> <span class="text-neutral-400">Claude Code · Codex</span>     <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span> • <span class="text-neutral-300">training</span> (train/tune/compare)  <span class="text-neutral-500">│───────►│</span> MLflow · DVC    <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  └─────────────────────────┘</span>      <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span> • <span class="text-neutral-300">evaluation</span> (metrics/sanity)   <span class="text-neutral-500">│</span>        <span class="text-neutral-500">│</span> W&amp;B · Docker    <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  ┌─────────────────────────┐</span>      <span class="text-neutral-500">│</span>      <span class="text-neutral-500">│</span> • <span class="text-neutral-300">registry</span> (versioning/lineage) <span class="text-neutral-500">│</span>        <span class="text-neutral-500">│</span> Vertex AI       <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  │</span> <span class="text-white">CapTrain 原生 Agent</span>     <span class="text-neutral-500">│──────┘</span>      <span class="text-neutral-500">│</span> • <span class="text-neutral-300">inference</span> (batch/serving)      <span class="text-neutral-500">│</span>        <span class="text-neutral-500">│</span> AWS SageMaker   <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  │</span> <span class="text-neutral-400">plan → exec → analyze</span>   <span class="text-neutral-500">│</span>             <span class="text-neutral-500">│</span> • <span class="text-neutral-300">pipeline</span> (orchestration)      <span class="text-neutral-500">│</span>        <span class="text-neutral-500">└─────────────────┘</span>
+<span class="text-neutral-500">  │</span> <span class="text-neutral-400">→ iterate (内建防护栏)</span>  <span class="text-neutral-500">│</span>             <span class="text-neutral-500">└──────────────────────────────────┘</span>
+<span class="text-neutral-500">  └─────────────────────────┘</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== FEATURES ====== -->
+    <section id="features" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">功能</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">ML 生命周期的每个阶段</h2>
+          <p class="mt-3 text-neutral-400 max-w-lg mx-auto">从数据检查到生产监控。CLI、MCP 或原生 Agent 均可调用相同的共享能力。</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Data -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">数据检查与验证</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Schema 分析、统计指标、异常检测、数据质量规则、类型检查与空值校验。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap data inspect</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">inspect_dataset()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“检查数据集是否存在泄漏与空值”</span></div>
+            </div>
+          </div>
+
+          <!-- Training -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">训练与超参调优</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">执行模型训练与微调，支持超参空间探索，输出结构化实验记录与分析指标。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap train</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">train_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“训练基线模型并调优超参数”</span></div>
+            </div>
+          </div>
+
+          <!-- Evaluation -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">评估与基准对比</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">多模型横向横评、子群体切片评估、置信区间计算与性能基准基线对照。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap eval</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">evaluate_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“按切片细分评估并对比基线”</span></div>
+            </div>
+          </div>
+
+          <!-- Registry -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">模型注册与血缘</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">版本控制、元数据注册与血缘追踪。自信可靠地将优质模型推进到生产阶段。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap model register</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">register_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“注册最优模型并锁定数据版本”</span></div>
+            </div>
+          </div>
+
+          <!-- Inference -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">推理与部署准备</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">批量离线预测与实时推理服务。自动生成 Dockerfile 与容器化部署准备。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap infer serve</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">predict() / serve()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“构建 Docker 容器并启动推理服务”</span></div>
+            </div>
+          </div>
+
+          <!-- Pipeline -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+            <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+              <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+            </div>
+            <h3 class="text-white font-semibold text-sm mb-1.5">流水线编排</h3>
+            <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">从数据到部署的端到端自动化流水线。YAML 声明式配置，100% 确定性复现。</p>
+            <div class="space-y-1.5 font-mono text-[11px] pt-3 border-t border-neutral-800/80">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">CLI</span> <span class="text-neutral-400">cap pipeline run</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-600 font-semibold shrink-0">MCP</span> <span class="text-neutral-400">run_pipeline()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-emerald-500 font-semibold shrink-0">Agent</span> <span class="text-neutral-300 text-right">“执行完整流水线并通过论证门禁”</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== NATIVE AI AGENT SECTION ====== -->
+    <section id="agent" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <!-- Section Header -->
+        <div class="text-center mb-16">
+          <p class="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-3 font-mono">原生 AI AGENT</p>
+          <h2 class="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">
+            专为 ML 生命周期打造的原生 Agent
+          </h2>
+          <p class="mt-4 text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            算法与机器学习工程师只需用自然语言描述任务，Agent 即可自动且严谨地规划、执行、分析并迭代 ML 实验。
+          </p>
+        </div>
+
+        <!-- 12 Core Responsibilities Grid -->
+        <div class="mb-20">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="text-xs font-mono font-semibold uppercase tracking-wider text-neutral-400">核心职责</span>
+            <span class="h-px flex-1 bg-neutral-800"></span>
+            <span class="text-xs font-mono text-neutral-500">12 个端到端关键职能</span>
+          </div>
+
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">01</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">数据集分析与验证</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">自动解析数据结构、分布特征与脏数据规则，拦截质量隐患。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">02</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">EDA 与特征预处理</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">自动化探索性数据分析、缺失值插补、特征编码与切分策略清洗。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">03</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">基线模型构建</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">快速构建启发式或极简基准模型，为后续复杂实验迭代锚定性能基准线。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">04</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">模型训练与微调</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">执行经典模型、深度学习架构与微调训练（Fine-tuning），保持稳定收敛。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">05</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">超参数调优</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">多策略超参数空间探索，结合早停机制与贝叶斯优化，最大化模型收益。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">06</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">模型评估与多模型横向对比</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">统一多维评估体系，生成模型胜负排行榜与置信度差异分析。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">07</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">实验执行与全流程追踪</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">全自动无干预调度实验流程，细粒度跟踪损失曲线、资源开销与状态。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">08</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">实验版本控制与追踪管理</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">深度绑定代码快照、数据快照与环境配置，保障历史实验 100% 可复现。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">09</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">过拟合与数据泄漏诊断</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">深入学习曲线与特征依赖关系，及时揪出虚假高分与隐蔽的穿越泄漏。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">10</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">最终模型遴选</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">权衡准确率、推理延迟、资源开销与业务切片表现，科学决策上线候选。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">11</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">实验洞察报告自动生成</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">自动归纳实验推演逻辑、调优拐点与结论摘要，生成供工程团队审阅的报告。</p>
+            </div>
+
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-5">
+              <div class="text-xs font-mono text-emerald-400 font-bold mb-2">12</div>
+              <h4 class="text-white font-semibold text-sm mb-1.5">推理服务与生产部署准备</h4>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">产出生产级 Docker 镜像、API 服务接口封装与监控打点配置，就绪上线。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Specialized Toolkit & The Justifier -->
+        <div class="mb-20 border-t border-neutral-800/60 pt-16">
+          <div class="text-center mb-12">
+            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2 font-mono">专业防护栏</p>
+            <h3 class="font-display text-2xl md:text-3xl font-bold text-white tracking-tight">
+              Agent 专业工具箱与“论证检查门禁”
+            </h3>
+            <p class="mt-3 text-neutral-400 max-w-2xl mx-auto text-sm">
+              与仅能运行任意 Python 脚本的通用代码 Agent 有着本质不同：CapTrain 内建领域级防护栏，在错误与虚假高分进入报告前将其彻底拦截。
+            </p>
+          </div>
+
+          <!-- 4 Toolkit Blocks -->
+          <div class="grid md:grid-cols-2 gap-4 mb-8">
+            <!-- Data Integrity -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-white font-semibold text-sm">数据完整性 (Data Integrity)</h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 bg-neutral-800 text-neutral-300">防范根源缺陷</span>
+              </div>
+              <div class="font-mono text-xs text-neutral-400 bg-neutral-900/80 p-2.5 border border-neutral-800 mb-3 space-y-1">
+                <div>check_leakage()</div>
+                <div>check_split_validity()</div>
+                <div>check_duplicate_rows_across_splits()</div>
+              </div>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">
+                拦截目标值隐式泄漏、切分策略违规（如时序穿越）、训练/测试集样本跨集重叠等致命错误。
+              </p>
+            </div>
+
+            <!-- Evaluation Sanity -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-white font-semibold text-sm">评估合理性 (Evaluation Sanity)</h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 bg-neutral-800 text-neutral-300">严谨度量</span>
+              </div>
+              <div class="font-mono text-xs text-neutral-400 bg-neutral-900/80 p-2.5 border border-neutral-800 mb-3 space-y-1">
+                <div>suggest_metric()</div>
+                <div>baseline_comparator()</div>
+                <div>confidence_interval()</div>
+              </div>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">
+                纠正与业务场景不匹配的评价指标，拦截未超越平凡基线（Trivial Baseline）的伪优化，避免将随机噪声当成信号。
+              </p>
+            </div>
+
+            <!-- Over/Underfitting -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-white font-semibold text-sm">过拟合/欠拟合诊断 (Diagnostics)</h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 bg-neutral-800 text-neutral-300">收敛深度诊断</span>
+              </div>
+              <div class="font-mono text-xs text-neutral-400 bg-neutral-900/80 p-2.5 border border-neutral-800 mb-3 space-y-1">
+                <div>learning_curve_analyzer()</div>
+                <div>feature_importance_sanity_check()</div>
+              </div>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">
+                自动化诊断训练集与验证集泛化间隙，审查异常主导特征，揪出伪装在高准确率下的严重特征泄漏。
+              </p>
+            </div>
+
+            <!-- Reproducibility & Provenance -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-white font-semibold text-sm">可复现性与溯源 (Provenance)</h4>
+                <span class="text-[10px] font-mono px-2 py-0.5 bg-neutral-800 text-neutral-300">全链条锁定</span>
+              </div>
+              <div class="font-mono text-xs text-neutral-400 bg-neutral-900/80 p-2.5 border border-neutral-800 mb-3 space-y-1">
+                <div>experiment_diff()</div>
+                <div>data_version_lock()</div>
+              </div>
+              <p class="text-neutral-500 text-[13px] leading-relaxed">
+                精准对比不可追踪的参数与环境差异，锁定不同数据快照版本，杜绝因数据底座不同步导致的无效对比。
+              </p>
+            </div>
+          </div>
+
+          <!-- The Justifier Highlight Box -->
+          <div class="border border-neutral-700 bg-neutral-900/60 p-6 md:p-8">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+              <div class="flex items-center gap-3">
+                <span class="w-3 h-3 bg-emerald-400 rounded-sm"></span>
+                <h4 class="text-white font-display text-lg font-bold">论证检查门禁 (The Justifier)</h4>
+              </div>
+              <span class="text-[11px] font-mono text-neutral-400 uppercase tracking-wider bg-neutral-800 px-2.5 py-1">
+                流水线强制门禁 · 非单纯工具
+              </span>
+            </div>
+            <p class="text-neutral-400 text-sm leading-relaxed mb-6">
+              在向工程师汇报最终结论前，Agent 必须强制通过由结构化检查点构成的逻辑门禁。杜绝盲目自信&mdash;&mdash;把单纯的“准确率达到 94%”，转变为“准确率 94%，且附带无可辩驳的证据链与论证依据”，所有论证过程全程沉淀于实验日志。
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+              <div class="p-3 border border-neutral-800 bg-[#111111] flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="text-neutral-300">切分策略无误</span>
+              </div>
+              <div class="p-3 border border-neutral-800 bg-[#111111] flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="text-neutral-300">评估指标合理</span>
+              </div>
+              <div class="p-3 border border-neutral-800 bg-[#111111] flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="text-neutral-300">显著跑赢基线</span>
+              </div>
+              <div class="p-3 border border-neutral-800 bg-[#111111] flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">&#10003;</span>
+                <span class="text-neutral-300">绝无数据泄漏</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10 Senior ML Principles -->
+        <div class="border-t border-neutral-800/60 pt-16">
+          <div class="text-center mb-14">
+            <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2 font-mono">工程准则</p>
+            <h3 class="font-display text-2xl md:text-4xl font-bold text-white tracking-tight">
+              CapTrain 像资深机器学习工程师一样思考
+            </h3>
+            <p class="mt-3 text-neutral-400 max-w-xl mx-auto text-sm">
+              超越演示 Demo，践行 10 大生产级工程原则，赢得算法团队在关键业务流中的深度信任。
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4">
+            <!-- 1 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">01</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">成本预估与预算控制</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  耗时与大规模算力训练前自动调用 <code class="text-neutral-300 font-mono text-[12px]">estimate_cost()</code>，设定支出上限，超出阈值强制需人工审批。
+                </p>
+              </div>
+            </div>
+
+            <!-- 2 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">02</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">切片级细粒度评估</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  默认按核心业务子群体与少数派样本切片展开多维评测，无死角揭示被整体指标掩盖的盲区。
+                </p>
+              </div>
+            </div>
+
+            <!-- 3 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">03</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">默认保留人工介入 (HITL)</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  在不可逆的关键操作（如生产上线模型晋级、关键训练集筛选确立）前设置强制性人工确认检查点。
+                </p>
+              </div>
+            </div>
+
+            <!-- 4 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">04</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">数据单元测试自动化</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  针对每一个新数据快照自动执行 Schema 模式、数据漂移（Drift）与异常空值分布检测。
+                </p>
+              </div>
+            </div>
+
+            <!-- 5 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">05</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">严格的代码沙箱隔离</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  Agent 生成与运行的代码限制在安全隔离沙箱中，杜绝非受控的网络访问与越权文件写入。
+                </p>
+              </div>
+            </div>
+
+            <!-- 6 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">06</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">深度兼容现有技术栈</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  与 MLflow、DVC、W&amp;B、Vertex AI、SageMaker 深度组合，赋能既有基础设施而非粗暴替代。
+                </p>
+              </div>
+            </div>
+
+            <!-- 7 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">07</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">Agent 决策全链路可解释性</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  透明沉淀“为何选择该模型架构与超参空间”的推演决策日志，与模型自身的解释性（SHAP 等）同等重视。
+                </p>
+              </div>
+            </div>
+
+            <!-- 8 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">08</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">秒级快速回滚机制</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  秒级精准回退至任意历史模型版本、数据切分与配置状态，版本链条清晰可溯。
+                </p>
+              </div>
+            </div>
+
+            <!-- 9 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">09</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">部署后持续跟踪与监控</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  将在线数据漂移、模型概念衰减（Concept Drift）与业务指标衰退追踪纳为常态化闭环。
+                </p>
+              </div>
+            </div>
+
+            <!-- 10 -->
+            <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex gap-4">
+              <span class="text-xs font-mono text-emerald-400 font-bold">10</span>
+              <div>
+                <h4 class="text-white font-semibold text-sm mb-1">原生支持团队多人协作</h4>
+                <p class="text-neutral-500 text-[13px] leading-relaxed">
+                  实验记录、论证结论与洞察报告对全团队公开透明，不再禁锢于单个工程师本地终端。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== LIFECYCLE ====== -->
+    <section id="lifecycle" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">生命周期</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">从数据到部署。完整循环。</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">ML 生命周期的每个步骤，自动化且相互连接。</p>
+        </div>
+
+        <!-- Horizontal pipeline -->
+        <div class="terminal-block mx-auto overflow-x-auto">
+          <div class="flex items-center gap-0 min-w-max px-6 py-5">
+            <span class="bg-white text-black text-[11px] font-bold px-3 py-1.5 font-mono whitespace-nowrap">数据</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">检查</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">验证</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">准备</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">训练</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">评估</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">比较</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">注册</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">服务</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">监控</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-white/10 text-white text-[11px] font-bold px-3 py-1.5 font-mono whitespace-nowrap border border-white/20">迭代</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== INTEGRATIONS ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">集成</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">与您的技术栈深度组合</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">CapTrain 不会替代您的工具&mdash;&mdash;而是将它们高效串联起来。</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">MLflow</div>
+            <p class="text-[11px] text-neutral-500">实验跟踪与注册</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">DVC</div>
+            <p class="text-[11px] text-neutral-500">数据与流水线版本</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">W&amp;B</div>
+            <p class="text-[11px] text-neutral-500">可视化与指标日志</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">Docker</div>
+            <p class="text-[11px] text-neutral-500">可复现生产容器</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">Vertex AI</div>
+            <p class="text-[11px] text-neutral-500">云端训练与托管</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">SageMaker</div>
+            <p class="text-[11px] text-neutral-500">企业级托管流水线</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== PRICING ====== -->
+    <section id="pricing" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">定价</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">免费开始。准备就绪后扩展。</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">开源核心，为团队提供可选的托管协作服务。</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- Community -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-7 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">开源社区版</h3>
+              <p class="text-neutral-500 text-[13px]">面向个人开发者、工程师与学术研究。</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">免费</span>
+              <span class="text-neutral-500 text-sm ml-1">永久</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 完整 CLI、MCP 与原生 Agent 核心</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Apache 2.0 开源许可</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 数据校验与 The Justifier 门禁机制</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 本地模型与云端模型全面支持</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 开源社区支持与共享生态</li>
+            </ul>
+            <a href="#install" class="block text-center border border-neutral-700 text-white py-2.5 text-[13px] font-semibold hover:bg-neutral-800 transition-colors">
+              开始使用
+            </a>
+          </div>
+
+          <!-- Pro -->
+          <div class="card-hover border border-white bg-[#111111] p-7 flex flex-col relative">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold uppercase tracking-wider px-3 py-0.5">
+              热门
+            </div>
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">专业版</h3>
+              <p class="text-neutral-500 text-[13px]">面向专业 ML 算法工程师与独立创作者。</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">$19</span>
+              <span class="text-neutral-500 text-sm ml-1">/月</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> 包含社区版所有功能</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> 托管式实验追踪与云端记忆</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> 团队云端模型注册表</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> 优先技术支持通道</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> 支持最多 5 人小团队协同</li>
+            </ul>
+            <a href="#" class="block text-center bg-white text-black py-2.5 text-[13px] font-semibold hover:bg-neutral-200 transition-colors">
+              开始免费试用
+            </a>
+          </div>
+
+          <!-- Team -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-7 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">团队企业版</h3>
+              <p class="text-neutral-500 text-[13px]">面向大规模算法团队与生产级 MLOps 组织。</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">$49</span>
+              <span class="text-neutral-500 text-sm ml-1">/月</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 包含专业版所有功能</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 不限团队成员人数</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 企业级 SSO / SAML 认证集成</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 专属服务等级协议 (SLA) 保证</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> 1 对 1 专属架构师技术支持</li>
+            </ul>
+            <a href="#" class="block text-center border border-neutral-700 text-white py-2.5 text-[13px] font-semibold hover:bg-neutral-800 transition-colors">
+              联系销售
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== QUICK START ====== -->
+    <section id="install" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-2xl">
+        <div class="text-center mb-10">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3 font-mono">快速开始</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">几秒钟内启动</h2>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-4 justify-center">
+          <button onclick="switchTab('pip')" id="tab-pip" class="tab-active px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">pip</button>
+          <button onclick="switchTab('uv')" id="tab-uv" class="tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">uv</button>
+          <button onclick="switchTab('source')" id="tab-source" class="tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">从源码安装</button>
+        </div>
+
+        <!-- Terminal blocks -->
+        <div id="code-pip" class="terminal-block">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('pip')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">复制</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap data inspect data/dataset.csv</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span></code></pre>
+        </div>
+
+        <div id="code-uv" class="terminal-block hidden">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('uv')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">复制</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">uv pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap data inspect data/dataset.csv</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span></code></pre>
+        </div>
+
+        <div id="code-source" class="terminal-block hidden">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('source')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">复制</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">git clone https://github.com/masteryogo/captrain.git</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cd captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install -e ".[dev]"</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ROADMAP ====== -->
+    <section id="roadmap" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-3xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3 font-mono">路线图</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">多主线并行推进</h2>
+          <p class="mt-3 text-neutral-400 text-sm max-w-lg mx-auto">
+            核心、CLI、MCP 与原生 Agent 同步研发，而非延后拼装的附带功能。透明、社区驱动。
+          </p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Track 1: Foundation -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-in-progress w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">基础架构主线 (Foundation)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">进行中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              核心包骨架结构、pyproject.toml 依赖定义、GitHub Actions CI/CD 自动化流水线、测试套件与类型检查。
+            </p>
+          </div>
+
+          <!-- Track 2: Data Layer -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-in-progress w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">数据工程层主线 (Data Layer)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">进行中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              <code class="text-neutral-300 font-mono text-[12px]">cap data inspect</code>、<code class="text-neutral-300 font-mono text-[12px]">validate</code> 与 <code class="text-neutral-300 font-mono text-[12px]">prepare</code>&mdash;&mdash;构建从数据清洗到特征切分的坚实底座。
+            </p>
+          </div>
+
+          <!-- Track 3: Training & Eval -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-in-progress w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">训练与评估引擎主线 (Training &amp; Eval)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">进行中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              <code class="text-neutral-300 font-mono text-[12px]">cap train</code>、<code class="text-neutral-300 font-mono text-[12px]">cap eval</code>、多实验横向对比差异分析（diff）及统一基准评测。
+            </p>
+          </div>
+
+          <!-- Track 4: Registry & Inference -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-pending w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">注册表与推理主线 (Registry &amp; Inference)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-neutral-800 text-neutral-400 px-2 py-0.5 font-medium">规划中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              模型版本生命周期管理、全链路溯源、批量预测与基于 Docker 容器化的轻量级实时推理服务。
+            </p>
+          </div>
+
+          <!-- Track 5: MCP Interface -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-in-progress w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">MCP 外部 Agent 接口主线 (MCP Interface)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">进行中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              将核心所有工程能力封装为标准化 MCP 协议工具集，供 Claude Code、Codex 等外部编码 Agent 直接调用。
+            </p>
+          </div>
+
+          <!-- Track 6: Orchestration & Monitoring -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-pending w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">编排与生产监控主线 (Orchestration &amp; Monitoring)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-neutral-800 text-neutral-400 px-2 py-0.5 font-medium">规划中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              端到端声明式流水线编排、生产环境数据漂移持续检测、概念衰退预警与实时业务指标联动。
+            </p>
+          </div>
+
+          <!-- Track 7: Agent Specialized Toolkit -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-in-progress w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">Agent 专业工具集与论证门禁 (Agent Toolkit &amp; The Justifier)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium border border-emerald-500/20">进行中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              内建数据泄漏检查、切分策略合法性验证、指标合理性校验、过拟合诊断工具与“论证检查门禁”强制校验。
+            </p>
+          </div>
+
+          <!-- Track 8: Agent Memory & Context -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-pending w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">Agent 上下文与记忆主线 (Memory &amp; Context)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-neutral-800 text-neutral-400 px-2 py-0.5 font-medium">规划中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              项目全貌感知、历史实验轨迹沉淀、跨会话会话上下文保持，确保 Agent 具备长期工程记忆。
+            </p>
+          </div>
+
+          <!-- Track 9: Native Autonomous Agent -->
+          <div class="border border-neutral-800 bg-[#111111] p-5">
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="roadmap-pending w-2.5 h-2.5 rounded-full flex-shrink-0"></div>
+                <h4 class="text-white font-semibold text-sm">原生自主 Agent 主线 (Native Autonomous Agent)</h4>
+              </div>
+              <span class="text-[10px] font-mono bg-neutral-800 text-neutral-400 px-2 py-0.5 font-medium">规划中</span>
+            </div>
+            <p class="text-neutral-400 text-[13px] leading-relaxed">
+              实现规划（Plan）&rarr; 执行（Execute）&rarr; 分析（Analyze）&rarr; 迭代（Iterate）的完整闭环，全自主驱动机器学习实验。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="border-t border-neutral-800/60 py-12 px-6">
+    <div class="mx-auto max-w-5xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <div>
+          <div class="flex items-center gap-2.5 mb-3">
+            <svg viewBox="0 0 140 140" class="w-5 h-5" fill="none">
+              <rect x="0" y="0" width="119" height="19" fill="#FFF"/>
+              <rect x="0" y="0" width="39" height="139" fill="#FFF"/>
+              <rect x="0" y="120" width="119" height="19" fill="#FFF"/>
+              <rect x="120" y="60" width="19" height="19" fill="#E2622A"/>
+            </svg>
+            <span class="font-display text-white font-semibold text-sm">CapTrain</span>
+          </div>
+          <p class="text-neutral-500 text-[13px]">统一的 ML 工程层。三大接口。</p>
+        </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-neutral-500">
+          <a href="https://github.com/masteryogo/captrain" class="hover:text-white transition-colors">GitHub</a>
+          <a href="https://pypi.org/project/captrain/" class="hover:text-white transition-colors">PyPI</a>
+          <a href="#" class="hover:text-white transition-colors">文档</a>
+          <a href="../../LICENSE" class="hover:text-white transition-colors">许可证</a>
+        </div>
+      </div>
+      <div class="mt-8 pt-6 border-t border-neutral-800/60 flex flex-col md:flex-row items-center justify-between gap-3">
+        <p class="text-neutral-600 text-[11px]">&copy; 2026 CapTrain 贡献者。Apache 2.0.</p>
+        <p class="text-neutral-600 text-[11px]">由 <a href="https://github.com/masteryogo" class="hover:text-neutral-400 transition-colors">João Pedro</a> &amp; 社区精心制作。</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => menu.classList.add('hidden')));
+
+    // Tab switching
+    function switchTab(tab) {
+      ['pip', 'uv', 'source'].forEach(t => {
+        document.getElementById('code-' + t).classList.toggle('hidden', t !== tab);
+        const tabBtn = document.getElementById('tab-' + t);
+        tabBtn.className = t === tab ? 'tab-active px-4 py-1.5 text-[13px] font-mono font-medium transition-colors' : 'tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors';
+      });
+    }
+
+    // Copy code
+    function copyCode(tab) {
+      const code = document.getElementById('code-' + tab).querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('#code-' + tab + ' button');
+        btn.textContent = '已复制！';
+        setTimeout(() => btn.textContent = '复制', 2000);
+      });
+    }
+
+    // Language switcher dropdown
+    document.addEventListener('click', function(e) {
+      const switcher = document.getElementById('lang-switcher');
+      const dropdown = document.getElementById('lang-dropdown');
+      if (switcher && dropdown && !switcher.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  </script>
+
+</body>
+</html>

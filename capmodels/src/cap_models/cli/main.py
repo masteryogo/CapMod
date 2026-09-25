@@ -1,4 +1,4 @@
-"""Cap Models CLI — the human interface over the core toolkit.
+"""CapTrain CLI — the human interface over the core toolkit.
 
 Every command is a thin wrapper that ultimately delegates to the core.
 A global ``--json`` flag produces structured (JSON) output for AI agents.
@@ -11,9 +11,9 @@ from typing import Any
 
 import click
 
-from cap_models.core.data.inspect import inspect_dataset
-from cap_models.core.data.prepare import prepare_dataset
-from cap_models.core.data.validate import validate_dataset
+from captrain.core.data.inspect import inspect_dataset
+from captrain.core.data.prepare import prepare_dataset
+from captrain.core.data.validate import validate_dataset
 
 
 @click.group()
@@ -23,10 +23,10 @@ from cap_models.core.data.validate import validate_dataset
     is_flag=True,
     help="Emit structured JSON output (agent-friendly).",
 )
-@click.version_option(package_name="cap-models", prog_name="cap")
+@click.version_option(package_name="captrain", prog_name="cap")
 @click.pass_context
 def main(ctx: click.Context, as_json: bool) -> None:
-    """Cap Models — one ML engineering layer for humans and agents."""
+    """CapTrain — one ML engineering layer for humans and agents."""
     ctx.ensure_object(dict)
     ctx.obj["json"] = as_json
 

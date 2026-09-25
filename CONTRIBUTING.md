@@ -1,6 +1,6 @@
-﻿# Contributing to Cap Models
+﻿# Contributing to CapTrain
 
-Thanks for your interest in contributing! Cap Models is an open, community-driven project building a unified ML/AI engineering layer that works for both humans (CLI) and AI agents (MCP).
+Thanks for your interest in contributing! CapTrain is an open, community-driven project building a unified ML/AI engineering layer that works for both humans (CLI) and AI agents (MCP).
 
 We're in active early development, which means this is the perfect time to help shape the architecture, roadmap, and design. Every contribution counts — code, docs, tests, ideas, or a good question.
 
@@ -11,8 +11,8 @@ We're in active early development, which means this is the perfect time to help 
 Clone the repo and set up a local dev environment:
 
 ```bash
-git clone https://github.com/masteryogo/cap-models.git
-cd cap-models
+git clone https://github.com/masteryogo/captrain.git
+cd captrain
 
 # Sync dependencies (creates .venv with Python from .python-version)
 uv sync --extra dev
@@ -35,9 +35,9 @@ uv run mypy src
 
 ## Development Guidelines
 
-- **Architecture first** — Core logic lives under `src/cap_models/core/`. CLI and MCP are thin wrappers over the core. No duplicated logic between interfaces.
+- **Architecture first** — Core logic lives under `capmodels/src/captrain/core/`. CLI and MCP are thin wrappers over the core. No duplicated logic between interfaces.
 - **Agent-friendly by design** — any new capability must expose structured output (JSON) for LLM consumption, not just human-readable text.
-- **Write tests** — new functionality should ship with pytest tests under `tests/`.
+- **Write tests** — new functionality should ship with pytest tests under `capmodels/tests/`.
 - **Keep it documented** — user-facing commands go in the README; complex decisions deserve a comment or docstring.
 
 ## Checklist Before Opening a PR
@@ -56,7 +56,7 @@ uv run mypy src
 
 ## Getting Help
 
-- Open a discussion in the [Issues](https://github.com/masteryogo/cap-models/issues) tab.
+- Open a discussion in the [Issues](https://github.com/masteryogo/captrain/issues) tab.
 - Reach out to maintainers for architecture or roadmap questions.
 
 _This is a living document. If something feels off, contribute to improving it too!_

@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 
-from cap_models import __version__
-from cap_models.cli.main import main
+from captrain import __version__
+from captrain.cli.main import main
 
 
 def test_version_option() -> None:

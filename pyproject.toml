@@ -1,5 +1,5 @@
 [project]
-name = "cap-models"
+name = "captrain"
 version = "0.1.0"
 description = "A unified ML/AI engineering layer for humans (CLI) and agents (MCP)."
 readme = "README.md"
@@ -38,17 +38,17 @@ dev = [
 ]
 
 [project.scripts]
-cap = "cap_models.cli.main:main"
+cap = "captrain.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/cap_models"]
+packages = ["captrain/src/captrain"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["captrain/tests"]
 addopts = "-q"
 
 [tool.ruff]

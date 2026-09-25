@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CapTrain | Una capa de ingeniería ML. Tres interfaces.</title>
+  <meta name="description" content="Una capa unificada de ingeniería ML/AI para todo el ciclo de vida de modelos — operable por humanos vía CLI, por agentes externos vía MCP y por un agente nativo autónomo de ML."/>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="alternate" hreflang="es" href="../es/index.html"/>
+  <link rel="alternate" hreflang="en" href="../en/index.html"/>
+  <link rel="alternate" hreflang="pt-BR" href="../pt/index.html"/>
+  <link rel="alternate" hreflang="fr" href="../fr/index.html"/>
+  <link rel="alternate" hreflang="zh-CN" href="../zh/index.html"/>
+  <link rel="alternate" hreflang="x-default" href="../en/index.html"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              0: '#0A0A0A',
+              1: '#111111',
+              2: '#171717',
+              3: '#1F1F1F',
+              4: '#262626',
+            },
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { background: #0A0A0A; }
+    .terminal-block {
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 0;
+    }
+    .terminal-block pre {
+      counter-reset: line;
+    }
+    .terminal-block pre .line::before {
+      counter-increment: line;
+      content: counter(line);
+      display: inline-block;
+      width: 2ch;
+      margin-right: 1.5ch;
+      text-align: right;
+      color: #525252;
+    }
+    .lifecycle-arrow {
+      color: #525252;
+    }
+    .card-hover {
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .card-hover:hover {
+      border-color: #404040;
+    }
+    .tab-active {
+      background: #FFFFFF;
+      color: #0A0A0A;
+    }
+    .tab-inactive {
+      background: #1F1F1F;
+      color: #A3A3A3;
+    }
+    .tab-inactive:hover {
+      background: #262626;
+      color: #D4D4D4;
+    }
+    .roadmap-done {
+      background: #FFFFFF;
+    }
+    .roadmap-pending {
+      background: #262626;
+      border: 2px solid #404040;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .cursor-blink {
+      animation: blink 1s step-end infinite;
+    }
+  </style>
+</head>
+<body class="text-neutral-300 font-sans antialiased">
+
+  <!-- ====== NAVBAR ====== -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-neutral-800/60 bg-[#0A0A0A]/80 backdrop-blur-xl">
+    <div class="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
+      <a href="#" class="flex items-center gap-2.5">
+        <svg viewBox="0 0 140 140" class="w-5 h-5" fill="none">
+          <rect x="0" y="0" width="119" height="19" fill="#FFF"/>
+          <rect x="0" y="0" width="39" height="139" fill="#FFF"/>
+          <rect x="0" y="120" width="119" height="19" fill="#FFF"/>
+          <rect x="120" y="60" width="19" height="19" fill="#E2622A"/>
+        </svg>
+        <span class="font-display text-white font-semibold text-sm tracking-tight">CapTrain</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8 text-[13px] font-medium text-neutral-400">
+        <a href="#features" class="hover:text-white transition-colors">Funcionalidades</a>
+        <a href="#lifecycle" class="hover:text-white transition-colors">Ciclo de Vida</a>
+        <a href="#agent" class="hover:text-white transition-colors flex items-center gap-1.5">
+          <span>Agente</span>
+          <span class="bg-[#E2622A]/10 text-[#E2622A] text-[10px] font-mono px-1.5 py-0.2 border border-[#E2622A]/30 font-semibold">ML</span>
+        </a>
+        <a href="#pricing" class="hover:text-white transition-colors">Precios</a>
+        <a href="#roadmap" class="hover:text-white transition-colors">Hoja de Ruta</a>
+        <a href="https://github.com/masteryogo/captrain" class="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <div class="hidden md:flex items-center gap-3">
+        <!-- Language Switcher Dropdown -->
+        <div class="relative" id="lang-switcher">
+          <button onclick="document.getElementById('lang-dropdown').classList.toggle('hidden')" class="flex items-center gap-1 text-neutral-400 hover:text-white text-[13px] font-medium">
+            ES <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div id="lang-dropdown" class="hidden absolute right-0 top-full mt-1 bg-[#1F1F1F] border border-[#262626] py-1 min-w-[140px] z-50 shadow-xl">
+            <a href="../es/index.html" class="block px-3 py-1.5 text-[13px] text-white bg-[#262626] font-semibold">Español</a>
+            <a href="../en/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">English</a>
+            <a href="../pt/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">Português</a>
+            <a href="../fr/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">Français</a>
+            <a href="../zh/index.html" class="block px-3 py-1.5 text-[13px] text-neutral-400 hover:text-white hover:bg-[#262626]">中文</a>
+          </div>
+        </div>
+        <a href="#install" class="inline-flex items-center gap-2 rounded-none bg-white text-black px-4 py-1.5 text-[13px] font-semibold hover:bg-neutral-200 transition-colors">
+          Instalar
+        </a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-neutral-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden border-t border-neutral-800/60 bg-[#0A0A0A] px-6 py-4 space-y-3 text-sm">
+      <a href="#features" class="block text-neutral-400 hover:text-white">Funcionalidades</a>
+      <a href="#lifecycle" class="block text-neutral-400 hover:text-white">Ciclo de Vida</a>
+      <a href="#agent" class="block text-neutral-400 hover:text-white">Agente Nativo de ML</a>
+      <a href="#pricing" class="block text-neutral-400 hover:text-white">Precios</a>
+      <a href="#roadmap" class="block text-neutral-400 hover:text-white">Hoja de Ruta</a>
+      <a href="https://github.com/masteryogo/captrain" class="block text-neutral-400 hover:text-white" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <div class="border-t border-neutral-800/60 pt-3 mt-1">
+        <p class="text-neutral-500 text-[11px] uppercase tracking-wider mb-2">Idioma</p>
+        <div class="flex flex-wrap gap-2">
+          <a href="../es/index.html" class="text-[12px] text-white bg-[#262626] px-2.5 py-1 font-semibold">ES</a>
+          <a href="../en/index.html" class="text-[12px] text-neutral-400 hover:text-white px-2.5 py-1 bg-neutral-900">EN</a>
+          <a href="../pt/index.html" class="text-[12px] text-neutral-400 hover:text-white px-2.5 py-1 bg-neutral-900">PT</a>
+          <a href="../fr/index.html" class="text-[12px] text-neutral-400 hover:text-white px-2.5 py-1 bg-neutral-900">FR</a>
+          <a href="../zh/index.html" class="text-[12px] text-neutral-400 hover:text-white px-2.5 py-1 bg-neutral-900">ZH</a>
+        </div>
+      </div>
+      <a href="#install" class="block mt-2 bg-white text-black text-center py-2 font-semibold">Instalar</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ====== HERO ====== -->
+    <section class="pt-32 pb-20 px-6">
+      <div class="mx-auto max-w-3xl text-center">
+        <h1 class="font-display text-5xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.05]">
+          CapTrain
+        </h1>
+        <p class="mt-5 text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed">
+          Una capa de ingeniería ML.<br/>Tres interfaces.
+        </p>
+
+        <!-- Frase central destacada -->
+        <div class="mt-6 inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm md:text-base font-mono">
+          <span class="text-[#E2622A] font-bold mr-1">&gt;</span>
+          <span class="text-neutral-300">&ldquo;Claude Code escribe software.</span>
+          <span class="text-white font-semibold">CapTrain diseña modelos.&rdquo;</span>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal-block mt-8 mx-auto max-w-lg text-left">
+          <div class="flex items-center gap-2 px-4 py-2.5 border-b border-neutral-800">
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+            <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span>
+<span class="text-neutral-500">$</span> <span class="cursor-blink text-white">_</span></code></pre>
+        </div>
+
+        <!-- Badges: 3 interfaces + Apache 2.0 -->
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            CLI para humanos
+          </span>
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            MCP para agentes externos
+          </span>
+          <span class="inline-flex items-center gap-2 border border-[#E2622A]/40 bg-[#E2622A]/10 px-3 py-1.5 text-xs font-medium text-[#E2622A]">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Agente Nativo para ML
+          </span>
+          <span class="inline-flex items-center gap-2 border border-neutral-800 bg-neutral-900/50 px-3 py-1.5 text-xs font-medium text-neutral-300">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Apache 2.0
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ARCHITECTURE ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-4xl text-center">
+        <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Arquitectura</p>
+        <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Una capa. Tres interfaces.</h2>
+        <p class="mt-3 text-neutral-400 max-w-xl mx-auto">CLI, MCP y el Agente Nativo son interfaces ligeras sobre un núcleo compartido &mdash; cero lógica duplicada.</p>
+
+        <!-- Architecture Diagram -->
+        <div class="terminal-block mt-10 mx-auto max-w-2xl text-left overflow-x-auto">
+          <pre class="px-6 py-5 font-mono text-[12px] md:text-[13px] leading-5 text-neutral-400"><code><span class="text-neutral-500">  ┌────────────────┐   ┌──────────────────────┐   ┌────────────────────┐</span>
+<span class="text-neutral-500">  │</span> <span class="text-white">Humanos (CLI)</span>  <span class="text-neutral-500">│   │</span> <span class="text-white">Agentes Ext. (MCP)</span>  <span class="text-neutral-500">│   │</span> <span class="text-[#E2622A] font-semibold">Agente Nativo (ML)</span> <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  │</span> <span class="text-neutral-400">`cap ...`</span>      <span class="text-neutral-500">│   │</span> <span class="text-neutral-400">Claude Code / Codex</span>  <span class="text-neutral-500">│   │</span> <span class="text-neutral-400">plan→exec→eval→iter</span>  <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">  └───────┬────────┘   └──────────┬───────────┘   └─────────┬──────────┘</span>
+<span class="text-neutral-500">          │                       │                         │</span>
+<span class="text-neutral-500">          └─────────────────► ┌───▼───┐ ◄───────────────────┘</span>
+<span class="text-neutral-500">                              │ NÚCLEO│</span>
+<span class="text-neutral-500">                     ┌────────┴───────┴────────┐</span>
+<span class="text-neutral-500">                     │</span>      <span class="text-white">Core Toolkit</span>       <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     │</span> <span class="text-neutral-300">data · training · eval</span>  <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     │</span> <span class="text-neutral-300">registry · infer · pipe</span> <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     └────────────┬────────────┘</span>
+<span class="text-neutral-500">                                  │</span>
+<span class="text-neutral-500">                                  ▼</span>
+<span class="text-neutral-500">                     ┌─────────────────────────┐</span>
+<span class="text-neutral-500">                     │</span>      <span class="text-white">Integraciones</span>      <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     │</span> <span class="text-neutral-300">MLflow · DVC · W&amp;B</span>      <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     │</span> <span class="text-neutral-300">Docker · Vertex AI</span>      <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     │</span> <span class="text-neutral-300">AWS SageMaker</span>           <span class="text-neutral-500">│</span>
+<span class="text-neutral-500">                     └─────────────────────────┘</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== FEATURES ====== -->
+    <section id="features" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Funcionalidades</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Todas las etapas del ciclo de vida ML</h2>
+          <p class="mt-3 text-neutral-400 max-w-lg mx-auto">De la inspección de datos al monitoreo en producción. Misma capacidad vía CLI, MCP o Agente Nativo.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Data -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Inspección &amp; Validación de Datos</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Análisis de esquema, métricas estadísticas, detección de anomalías, reglas de calidad y manejo de valores nulos.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap data inspect</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">inspect_dataset()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;inspecciona dataset y verifica leakage&rdquo;</span></div>
+            </div>
+          </div>
+
+          <!-- Training -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Entrenamiento &amp; Experimentos</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Entrenamiento estructurado con hiperparámetros reproducibles. Comparación de ejecuciones lado a lado con salida JSON.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap train</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">train_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;entrena baseline y ajusta hiperparámetros&rdquo;</span></div>
+            </div>
+          </div>
+
+          <!-- Evaluation -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Evaluación &amp; Benchmarks</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Métricas rigurosas, desgloses por subgrupos, gráficas y comparación directa contra baselines elementales.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap eval</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">evaluate_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;evalúa por slices y compara con baseline&rdquo;</span></div>
+            </div>
+          </div>
+
+          <!-- Registry -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Registro de Modelos</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Versionado inmutable, registro centralizado y trazabilidad completa de linaje entre datos, código y pesos.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap model register</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">register_model()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;registra mejor modelo y bloquea versiones&rdquo;</span></div>
+            </div>
+          </div>
+
+          <!-- Inference -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Inferencia &amp; Serving</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Predicción batch de alto rendimiento y servidor de inferencia en tiempo real. Contenedores Docker listos para usar.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap infer serve</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">serve() / predict()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;construye contenedor Docker y sirve API&rdquo;</span></div>
+            </div>
+          </div>
+
+          <!-- Pipeline -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-6 flex flex-col justify-between">
+            <div>
+              <div class="w-9 h-9 flex items-center justify-center bg-neutral-800 mb-4">
+                <svg class="w-4.5 h-4.5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-1.5">Orquestación de Pipelines</h3>
+              <p class="text-neutral-500 text-[13px] leading-relaxed mb-4">Pipelines reproducibles de extremo a extremo definidos en YAML. Orquestación determinista y totalmente auditable.</p>
+            </div>
+            <div class="space-y-1.5 font-mono text-[11px] border-t border-neutral-800/60 pt-3">
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">CLI</span> <span class="text-neutral-300">cap pipeline run</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">MCP</span> <span class="text-neutral-300">run_pipeline()</span></div>
+              <div class="flex items-start justify-between gap-2"><span class="text-neutral-500 font-semibold shrink-0">Agente</span> <span class="text-neutral-300 text-right">&ldquo;corre pipeline y valida en El Justificador&rdquo;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== LIFECYCLE ====== -->
+    <section id="lifecycle" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Ciclo de Vida</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">De datos a despliegue. Ciclo completo.</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">Cada etapa del ciclo de vida ML, automatizada, reproducible y conectada.</p>
+        </div>
+
+        <!-- Horizontal pipeline -->
+        <div class="terminal-block mx-auto overflow-x-auto">
+          <div class="flex items-center gap-0 min-w-max px-6 py-5">
+            <span class="bg-white text-black text-[11px] font-bold px-3 py-1.5 font-mono whitespace-nowrap">Datos</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Inspeccionar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Validar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Preparar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Entrenar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Evaluar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Comparar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Registrar</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Servir</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-neutral-800 text-neutral-300 text-[11px] font-mono px-3 py-1.5 whitespace-nowrap">Monitorear</span>
+            <span class="text-neutral-600 mx-2">&rarr;</span>
+            <span class="bg-white/10 text-white text-[11px] font-bold px-3 py-1.5 font-mono whitespace-nowrap border border-white/20">Iterar</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== NATIVE AI AGENT ====== -->
+    <section id="agent" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <div class="inline-flex items-center gap-2 px-3 py-1 border border-[#E2622A]/40 bg-[#E2622A]/10 text-xs font-mono text-[#E2622A] mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#E2622A] animate-pulse"></span>
+            INTERFAZ NATIVA
+          </div>
+          <h2 class="font-display text-3xl md:text-5xl font-bold text-white tracking-tight">Diseñado para el ciclo de vida de ML</h2>
+          <p class="mt-4 text-neutral-400 max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+            Los ML Engineers describen tareas en lenguaje natural, y el agente <span class="text-white font-medium">planifica, ejecuta, analiza e itera</span> sobre experimentos de ML de forma reproducible &mdash; y defendible.
+          </p>
+        </div>
+
+        <!-- How the agent is built flow -->
+        <div class="terminal-block p-6 mb-12">
+          <p class="text-[11px] font-mono text-neutral-500 uppercase tracking-wider mb-4 text-center">Cómo se construye el agente &mdash; cero lógica duplicada</p>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-center font-mono text-xs">
+            <div class="border border-neutral-800 bg-neutral-900/60 p-4">
+              <span class="text-neutral-500 block text-[10px] mb-1">01. FUNDACIÓN</span>
+              <span class="text-white font-semibold">Núcleo de Ingeniería ML</span>
+              <p class="text-neutral-500 text-[11px] mt-1.5 font-sans">La misma infraestructura invocada por la terminal CLI y MCP.</p>
+            </div>
+            <div class="border border-neutral-800 bg-neutral-900/60 p-4">
+              <span class="text-neutral-500 block text-[10px] mb-1">02. GUARDARRAÍLES</span>
+              <span class="text-white font-semibold">Herramientas Especializadas</span>
+              <p class="text-neutral-500 text-[11px] mt-1.5 font-sans">Herramientas de dominio para descartar data leakage y splits defectuosos.</p>
+            </div>
+            <div class="border border-neutral-800 bg-neutral-900/60 p-4">
+              <span class="text-neutral-500 block text-[10px] mb-1">03. CONTINUIDAD</span>
+              <span class="text-white font-semibold">Contexto &amp; Memoria</span>
+              <p class="text-neutral-500 text-[11px] mt-1.5 font-sans">Memoria de proyecto persistente entre sesiones y corridas de experimentos.</p>
+            </div>
+            <div class="border border-[#E2622A]/40 bg-[#E2622A]/5 p-4">
+              <span class="text-[#E2622A] block text-[10px] mb-1">04. AUTONOMÍA</span>
+              <span class="text-white font-semibold">Ciclos de Punta a Punta</span>
+              <p class="text-neutral-400 text-[11px] mt-1.5 font-sans">Bucles autónomos de planificar &rarr; ejecutar &rarr; analizar &rarr; iterar.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 12 Core Responsibilities -->
+        <div class="mb-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-2">Capacidades</p>
+          <h3 class="font-display text-2xl font-bold text-white tracking-tight">12 responsabilidades asumidas de punta a punta</h3>
+          <p class="text-neutral-400 text-sm mt-1">El alcance que asume el agente nativo a lo largo de sus experimentos.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-6">
+          <!-- 01 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">01</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">DATOS</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Análisis y validación de datasets</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Verificación automática de esquemas, detección de anomalías, perfilado estadístico y pruebas de calidad de datos.</p>
+          </div>
+
+          <!-- 02 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">02</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">PREP</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">EDA y preprocesamiento</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Análisis de distribuciones, detección de outliers, estrategias de valores nulos y pipelines de codificación categórica.</p>
+          </div>
+
+          <!-- 03 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">03</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">SANIDAD</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Creación de baselines</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Establecimiento de baselines heurísticas y triviales previas para verificar que las arquitecturas complejas aporten valor tangible.</p>
+          </div>
+
+          <!-- 04 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">04</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">ENTRENO</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Entrenamiento y fine-tuning</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Ejecución y ajuste fino a través de algoritmos, arquitecturas, funciones de pérdida y optimizadores.</p>
+          </div>
+
+          <!-- 05 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">05</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">TUNING</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Hyperparameter tuning</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Espacios de búsqueda estructurados, barridos bayesianos y parada temprana respaldados por estimación previa de costes.</p>
+          </div>
+
+          <!-- 06 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">06</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">EVAL</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Evaluación y comparación de modelos</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Benchmarking multimétrica, intervalos de confianza, pruebas de significancia estadística y evaluación por subgrupos/slices.</p>
+          </div>
+
+          <!-- 07 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">07</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">EJEC</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Ejecución y seguimiento de experimentos</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Orquestación determinista de corridas con registro estructurado de parámetros, captura de artefactos y telemetría de recursos.</p>
+          </div>
+
+          <!-- 08 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">08</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">LINAJE</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Seguimiento de experimentos y versionado</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Código, datos, semillas, entorno y configuración bloqueados de forma inmutable para una reproducibilidad al 100%.</p>
+          </div>
+
+          <!-- 09 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">09</span>
+              <span class="text-[10px] font-mono text-[#E2622A] bg-[#E2622A]/10 px-1.5 py-0.5">BARRERA</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Diagnóstico de overfitting y data leakage</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Análisis automático de curvas de aprendizaje, pruebas de target leakage y detección de filas duplicadas entre particiones.</p>
+          </div>
+
+          <!-- 10 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">10</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">SELECCIÓN</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Selección de modelos</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Selección defendible basada en métricas justificadas según la tarea, restricciones de latencia, equidad en slices y coste.</p>
+          </div>
+
+          <!-- 11 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">11</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">REPORTE</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Generación de informes</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Documentación lista para auditoría con comparación de ejecuciones, curvas de métricas, justificación de decisiones y advertencias.</p>
+          </div>
+
+          <!-- 12 -->
+          <div class="border border-neutral-800 bg-[#111111] p-4 card-hover">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-mono text-xs text-neutral-500">12</span>
+              <span class="text-[10px] font-mono text-neutral-600 bg-neutral-900 px-1.5 py-0.5">DESPLIEGUE</span>
+            </div>
+            <h4 class="text-white font-semibold text-sm mb-1">Preparación para inferencia y despliegue</h4>
+            <p class="text-neutral-400 text-xs leading-relaxed">Empaquetado en contenedores, perfilado de latencia, pipelines de predicción en batch y pruebas de salud del servidor.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SPECIALIZED AGENT TOOLKIT & THE JUSTIFIER ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Guardarraíles de Dominio</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Toolkit Especializado del Agente &amp; El Justificador</h2>
+          <p class="mt-3 text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            Los agentes de código genérico que ejecutan Python arbitrario carecen de barreras de dominio contra los errores que invalidan resultados silenciosamente. CapTrain proporciona herramientas especializadas para interceptar errores antes de que lleguen a un reporte.
+          </p>
+        </div>
+
+        <!-- Toolkit Table -->
+        <div class="terminal-block overflow-hidden mb-10">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left font-mono text-xs">
+              <thead>
+                <tr class="border-b border-neutral-800 bg-neutral-900/80 text-neutral-400">
+                  <th class="py-3.5 px-5 font-semibold text-white">Bloque</th>
+                  <th class="py-3.5 px-5 font-semibold text-white">Herramientas</th>
+                  <th class="py-3.5 px-5 font-semibold text-white">Qué previene</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-neutral-800/60 text-[13px] font-sans">
+                <tr class="hover:bg-neutral-900/30 transition-colors">
+                  <td class="py-4 px-5 font-semibold text-white whitespace-nowrap align-top">
+                    <span class="inline-block w-2 h-2 rounded-full bg-red-400 mr-2"></span>Integridad de datos
+                  </td>
+                  <td class="py-4 px-5 font-mono text-xs text-neutral-300 align-top">
+                    <div>check_leakage()</div>
+                    <div class="mt-1">check_split_validity()</div>
+                    <div class="mt-1">check_duplicate_rows_across_splits()</div>
+                  </td>
+                  <td class="py-4 px-5 text-neutral-400 text-xs align-top">
+                    Target leakage, estrategia errónea de partición (ej. split aleatorio en series temporales) y solapamiento entre particiones de train y test.
+                  </td>
+                </tr>
+                <tr class="hover:bg-neutral-900/30 transition-colors">
+                  <td class="py-4 px-5 font-semibold text-white whitespace-nowrap align-top">
+                    <span class="inline-block w-2 h-2 rounded-full bg-amber-400 mr-2"></span>Sanidad de evaluación
+                  </td>
+                  <td class="py-4 px-5 font-mono text-xs text-neutral-300 align-top">
+                    <div>suggest_metric()</div>
+                    <div class="mt-1">baseline_comparator()</div>
+                    <div class="mt-1">confidence_interval()</div>
+                  </td>
+                  <td class="py-4 px-5 text-neutral-400 text-xs align-top">
+                    Métrica equivocada para el problema (ej. accuracy en clases desbalanceadas), baselines triviales no superadas y ruido estadístico confundido con señal.
+                  </td>
+                </tr>
+                <tr class="hover:bg-neutral-900/30 transition-colors">
+                  <td class="py-4 px-5 font-semibold text-white whitespace-nowrap align-top">
+                    <span class="inline-block w-2 h-2 rounded-full bg-blue-400 mr-2"></span>Diagnóstico
+                  </td>
+                  <td class="py-4 px-5 font-mono text-xs text-neutral-300 align-top">
+                    <div>learning_curve_analyzer()</div>
+                    <div class="mt-1">feature_importance_sanity_check()</div>
+                  </td>
+                  <td class="py-4 px-5 text-neutral-400 text-xs align-top">
+                    Overfitting patológico, underfitting estructural y data leakage encubierto a través de una variable dominante o sustituta del target.
+                  </td>
+                </tr>
+                <tr class="hover:bg-neutral-900/30 transition-colors">
+                  <td class="py-4 px-5 font-semibold text-white whitespace-nowrap align-top">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 mr-2"></span>Reproducibilidad
+                  </td>
+                  <td class="py-4 px-5 font-mono text-xs text-neutral-300 align-top">
+                    <div>experiment_diff()</div>
+                    <div class="mt-1">data_version_lock()</div>
+                  </td>
+                  <td class="py-4 px-5 text-neutral-400 text-xs align-top">
+                    Diferencias inexplicables entre ejecuciones, comparaciones entre snapshots incompatibles de datos y semillas no deterministas.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="px-5 py-3 border-t border-neutral-800 bg-neutral-900/40 text-[11px] text-neutral-400">
+            <strong class="text-neutral-200">Prioridad técnica:</strong> Integridad de datos y sanidad de evaluación primero &mdash; el data leakage y las métricas engañosas destruyen la confianza más rápido que cualquier fallo de código, y son las más fáciles de prevenir con heurísticas sólidas.
+          </div>
+        </div>
+
+        <!-- The Justifier Highlight Box -->
+        <div class="border border-[#E2622A]/50 bg-[#111111] p-6 md:p-8 relative">
+          <div class="absolute -top-3 left-6 bg-[#E2622A] text-black text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 font-mono">
+            Compuerta de Pipeline &mdash; No una simple herramienta
+          </div>
+          <div class="grid md:grid-cols-5 gap-6 items-center">
+            <div class="md:col-span-3">
+              <h3 class="text-white font-display text-xl font-bold mb-2">El Justificador</h3>
+              <p class="text-neutral-400 text-sm leading-relaxed mb-4">
+                Un checklist estructurado exigido obligatoriamente antes de reportar cualquier resultado final. Transforma un frágil <span class="text-neutral-200 font-mono font-semibold">&ldquo;94% de accuracy&rdquo;</span> en <span class="text-white font-mono font-semibold">&ldquo;94%, y he aquí documentado por qué confiamos en él.&rdquo;</span>
+              </p>
+              <div class="space-y-2 font-mono text-xs">
+                <div class="flex items-center gap-2.5 text-neutral-300">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span>Validez de partición comprobada: cero leakage temporal o por grupos</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-neutral-300">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span>Métrica justificada ante el desbalance de clases y el impacto de negocio</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-neutral-300">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span>Baselines heurísticas y triviales superadas con significancia estadística</span>
+                </div>
+                <div class="flex items-center gap-2.5 text-neutral-300">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span>Filas duplicadas entre splits y sustitutos de target comprobados ausentes</span>
+                </div>
+              </div>
+            </div>
+            <div class="md:col-span-2 border border-neutral-800 bg-neutral-900/60 p-4 font-mono text-xs text-neutral-400">
+              <div class="text-neutral-500 text-[10px] border-b border-neutral-800 pb-2 mb-2 flex items-center justify-between">
+                <span>AUDIT_LOG // EL JUSTIFICADOR</span>
+                <span class="text-emerald-400 font-bold">APROBADO</span>
+              </div>
+              <div class="space-y-1.5 text-[11px]">
+                <p><span class="text-neutral-500">&gt;</span> gate.status: <span class="text-white font-semibold">APROBADO</span></p>
+                <p><span class="text-neutral-500">&gt;</span> baseline_gap: <span class="text-emerald-400">+14.2%</span> (p &lt; 0.001)</p>
+                <p><span class="text-neutral-500">&gt;</span> leakage_score: <span class="text-emerald-400">0.000</span></p>
+                <p><span class="text-neutral-500">&gt;</span> metric_defense: <span class="text-neutral-300">"PR-AUC (desbalance: 1:99)"</span></p>
+                <p><span class="text-neutral-500">&gt;</span> signed_provenance: <span class="text-neutral-400">sha256:e3b0c4...</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== SENIOR ML ENGINEER PRINCIPLES ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Disciplina de Ingeniería</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">CapTrain piensa como un ML engineer sénior</h2>
+          <p class="mt-3 text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            Más allá del toolkit básico, estos son los 10 principios que deciden si un agente de ingeniería ML se gana la confianza de un equipo en un flujo de producción real, no solo en una demo.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <!-- 01 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">01</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Conciencia de costes</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">estimate_cost()</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Calcula el gasto de cómputo y nube antes de lanzar corridas costosas, aplicando un techo de presupuesto configurable que requiere aprobación humana.
+              </p>
+            </div>
+          </div>
+
+          <!-- 02 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">02</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Evaluación en slices y subgrupos</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">subgrupos por defecto</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Desglosa las métricas por subgrupos demográficos o de características relevantes por defecto, sacando a la luz caídas ocultas en segmentos minoritarios.
+              </p>
+            </div>
+          </div>
+
+          <!-- 03 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">03</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Human-in-the-loop por defecto</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">checkpoints obligatorios</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Puntos de aprobación humana obligatorios antes de pasos irreversibles, como promover un modelo a producción o seleccionar el dataset definitivo de entrenamiento.
+              </p>
+            </div>
+          </div>
+
+          <!-- 04 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">04</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Pruebas unitarias de datos</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">schema, drift, nulos</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Validaciones continuas de esquema, valores nulos y pruebas de deriva de distribución (data drift) en cada nuevo lote o versión de dataset.
+              </p>
+            </div>
+          </div>
+
+          <!-- 05 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">05</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Sandbox estricto de ejecución</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">aislamiento estricto</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                El código generado por el agente se ejecuta en aislamiento: sin acceso arbitrario a la red ni privilegios de escritura fuera de directorios controlados.
+              </p>
+            </div>
+          </div>
+
+          <!-- 06 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">06</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Integración con el stack existente</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">composición, no sustitución</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Se compone de forma nativa con MLflow, DVC, W&amp;B, Vertex AI, Docker y SageMaker. Potencia y coordina su infraestructura sin obligarle a cambiarla.
+              </p>
+            </div>
+          </div>
+
+          <!-- 07 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">07</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Explicabilidad de la decisión del agente</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">registro auditable</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Registro auditable y transparente de razonamiento sobre por qué el agente seleccionó un algoritmo, esquema de split o hiperparámetro.
+              </p>
+            </div>
+          </div>
+
+          <!-- 08 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">08</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Rollback sencillo</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">reversión en segundos</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Reversión al estado anterior de datos, configuración o artefactos en segundos con un historial navegable y completamente inmutable.
+              </p>
+            </div>
+          </div>
+
+          <!-- 09 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">09</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Monitorización post-despliegue</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">vigilancia continua</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Detección continua de data drift, concept drift y degradación de métricas de negocio integrada orgánicamente en el ciclo de vida.
+              </p>
+            </div>
+          </div>
+
+          <!-- 10 -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 card-hover flex gap-4">
+            <span class="font-mono text-sm text-[#E2622A] font-bold">10</span>
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <h4 class="text-white font-semibold text-sm">Multijugador desde el inicio</h4>
+                <code class="text-[11px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5">colaboración en equipo</code>
+              </div>
+              <p class="text-neutral-400 text-xs leading-relaxed">
+                Experimentos, hipótesis, decisiones y reportes son visibles y revisables por todo el equipo, nunca aislados en la sesión de un único desarrollador.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== INTEGRATIONS ====== -->
+    <section class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Integraciones</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Se compone con su stack</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">CapTrain no reemplaza sus herramientas &mdash; las orquesta y conecta.</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">MLflow</div>
+            <p class="text-[11px] text-neutral-500">Tracking de experimentos &amp; registro</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">DVC</div>
+            <p class="text-[11px] text-neutral-500">Versionado de datos &amp; pipelines</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">W&amp;B</div>
+            <p class="text-[11px] text-neutral-500">Visualización &amp; métricas</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">Docker</div>
+            <p class="text-[11px] text-neutral-500">Serving &amp; despliegue aislado</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">Vertex AI</div>
+            <p class="text-[11px] text-neutral-500">Entrenamiento &amp; cloud endpoints</p>
+          </div>
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-5 text-center">
+            <div class="text-base font-bold text-white mb-1 font-mono">SageMaker</div>
+            <p class="text-[11px] text-neutral-500">Pipelines cloud &amp; computación distribuida</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== PRICING ====== -->
+    <section id="pricing" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Precios</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Empiece gratis. Escale cuando esté listo.</h2>
+          <p class="mt-3 text-neutral-400 max-w-md mx-auto">Núcleo open source con servicios administrados opcionales para equipos.</p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <!-- Community -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-7 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">Comunidad</h3>
+              <p class="text-neutral-500 text-[13px]">Para ingenieros individuales e investigadores.</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">Gratis</span>
+              <span class="text-neutral-500 text-sm ml-1">para siempre</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Acceso completo a las 3 interfaces (CLI, MCP, Agente)</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Licencia Apache 2.0</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Todas las funcionalidades del núcleo</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Toolkit especializado del Agente</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Soporte de la comunidad &amp; modelos locales</li>
+            </ul>
+            <a href="#install" class="block text-center border border-neutral-700 text-white py-2.5 text-[13px] font-semibold hover:bg-neutral-800 transition-colors">
+              Comenzar
+            </a>
+          </div>
+
+          <!-- Pro -->
+          <div class="card-hover border border-white bg-[#111111] p-7 flex flex-col relative">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold uppercase tracking-wider px-3 py-0.5">
+              Popular
+            </div>
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">Pro</h3>
+              <p class="text-neutral-500 text-[13px]">Para ingenieros ML profesionales.</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">$19</span>
+              <span class="text-neutral-500 text-sm ml-1">/mes</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> Todo lo incluido en Comunidad</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> Seguimiento de experimentos gestionado en la nube</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> Registro de modelos remoto con historial ampliado</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> Soporte prioritario por email</li>
+              <li class="flex items-start gap-2.5"><span class="text-white mt-0.5">&#10003;</span> Colaboración en equipo (hasta 5 miembros)</li>
+            </ul>
+            <a href="#" class="block text-center bg-white text-black py-2.5 text-[13px] font-semibold hover:bg-neutral-200 transition-colors">
+              Iniciar Prueba Gratuita
+            </a>
+          </div>
+
+          <!-- Team -->
+          <div class="card-hover border border-neutral-800 bg-[#111111] p-7 flex flex-col">
+            <div class="mb-6">
+              <h3 class="text-white font-semibold text-base mb-1">Team</h3>
+              <p class="text-neutral-500 text-[13px]">Para organizaciones y ML en producción.</p>
+            </div>
+            <div class="mb-6">
+              <span class="text-4xl font-bold text-white">$49</span>
+              <span class="text-neutral-500 text-sm ml-1">/mes</span>
+            </div>
+            <ul class="space-y-3 mb-8 text-[13px] text-neutral-400 flex-1">
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Todo lo incluido en Pro</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Miembros de equipo ilimitados (multijugador)</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> SSO / SAML &amp; control de acceso basado en roles</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Garantía SLA y auditoría de seguridad</li>
+              <li class="flex items-start gap-2.5"><span class="text-neutral-600 mt-0.5">&#10003;</span> Soporte dedicado de ingeniería MLOps</li>
+            </ul>
+            <a href="#" class="block text-center border border-neutral-700 text-white py-2.5 text-[13px] font-semibold hover:bg-neutral-800 transition-colors">
+              Contactar Ventas
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== QUICK START ====== -->
+    <section id="install" class="py-20 px-6 border-t border-neutral-800/60 bg-neutral-950/30">
+      <div class="mx-auto max-w-2xl">
+        <div class="text-center mb-10">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Inicio Rápido</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Listo en segundos</h2>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-1 mb-4 justify-center">
+          <button onclick="switchTab('pip')" id="tab-pip" class="tab-active px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">pip</button>
+          <button onclick="switchTab('uv')" id="tab-uv" class="tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">uv</button>
+          <button onclick="switchTab('source')" id="tab-source" class="tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors">desde la fuente</button>
+        </div>
+
+        <!-- Terminal blocks -->
+        <div id="code-pip" class="terminal-block">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('pip')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">copiar</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap data inspect data/dataset.csv</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span></code></pre>
+        </div>
+
+        <div id="code-uv" class="terminal-block hidden">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('uv')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">copiar</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">uv pip install captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap data inspect data/dataset.csv</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap pipeline run --config pipeline.yaml</span></code></pre>
+        </div>
+
+        <div id="code-source" class="terminal-block hidden">
+          <div class="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-neutral-700"></span>
+              <span class="ml-2 text-[11px] text-neutral-500 font-mono">terminal</span>
+            </div>
+            <button onclick="copyCode('source')" class="text-[11px] text-neutral-500 hover:text-white font-mono transition-colors">copiar</button>
+          </div>
+          <pre class="px-5 py-4 font-mono text-[13px] leading-6"><code><span class="text-neutral-500">$</span> <span class="text-neutral-300">git clone https://github.com/masteryogo/captrain.git</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cd captrain</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">pip install -e ".[dev]"</span>
+<span class="text-neutral-500">$</span> <span class="text-neutral-300">cap init</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ROADMAP ====== -->
+    <section id="roadmap" class="py-20 px-6 border-t border-neutral-800/60">
+      <div class="mx-auto max-w-5xl">
+        <div class="text-center mb-14">
+          <p class="text-xs font-semibold uppercase tracking-widest text-neutral-500 mb-3">Hoja de Ruta</p>
+          <h2 class="font-display text-3xl md:text-4xl font-bold text-white tracking-tight">Frentes de desarrollo en paralelo</h2>
+          <p class="mt-3 text-neutral-400 max-w-xl mx-auto">Desarrollamos el núcleo completo &mdash; CLI, MCP y Agente Nativo &mdash; en frentes de trabajo simultáneos, no como capas añadidas tardíamente.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Track 1: Core Engine -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 flex flex-col justify-between card-hover">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-mono uppercase bg-neutral-800 text-neutral-300 px-2 py-0.5 font-semibold">Frente 01</span>
+                <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 font-medium">en progreso</span>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-2">Núcleo &amp; Capa de Datos</h3>
+              <p class="text-neutral-500 text-xs mb-4">La base compartida de ingeniería ML para las tres interfaces.</p>
+              <ul class="space-y-2.5 text-xs">
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span>Esqueleto del paquete, CI, tipado estricto</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-emerald-400 font-bold">&#10003;</span>
+                  <span><code class="text-neutral-300">data inspect, validate, prepare</code></span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span><code class="text-neutral-300">train, eval, compare</code> de experimentos</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Registro de modelos, <code class="text-neutral-300">predict</code> &amp; <code class="text-neutral-300">serve</code></span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Orquestación determinista <code class="text-neutral-300">pipeline run</code></span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Track 2: MCP Tools -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 flex flex-col justify-between card-hover">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-mono uppercase bg-neutral-800 text-neutral-300 px-2 py-0.5 font-semibold">Frente 02</span>
+                <span class="text-[10px] font-mono bg-blue-500/10 text-blue-400 px-2 py-0.5 font-medium">en diseño</span>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-2">Interfaz MCP</h3>
+              <p class="text-neutral-500 text-xs mb-4">Protocolo de herramientas de primera clase para Claude Code, Codex y agentes externos.</p>
+              <ul class="space-y-2.5 text-xs">
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Servidor Model Context Protocol nativo</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Núcleo completo expuesto en herramientas MCP</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Esquemas JSON deterministas y tipados</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Protocolo de recuperación ante fallos del agente</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Recetas para Claude Code, Cursor y Codex</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Track 3: Native Agent -->
+          <div class="border border-[#E2622A]/40 bg-[#111111] p-5 flex flex-col justify-between card-hover">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-mono uppercase bg-[#E2622A]/20 text-[#E2622A] px-2 py-0.5 font-semibold">Frente 03</span>
+                <span class="text-[10px] font-mono bg-[#E2622A]/10 text-[#E2622A] px-2 py-0.5 font-medium">núcleo paralelo</span>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-2">Agente Nativo de IA</h3>
+              <p class="text-neutral-500 text-xs mb-4">Razonamiento autónomo de ML, guardarraíles y bucles de experimentación.</p>
+              <ul class="space-y-2.5 text-xs">
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Toolkit especializado (<code class="text-neutral-300">leakage, split</code>)</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Sanidad de evaluación y compuertas de baselines</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Compuerta obligatoria <strong class="text-white font-semibold">El Justificador</strong></span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Contexto de proyecto y memoria de corridas</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Ciclos de planificar &rarr; ejecutar &rarr; iterar</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Track 4: Integrations & Cloud -->
+          <div class="border border-neutral-800 bg-[#111111] p-5 flex flex-col justify-between card-hover">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-[10px] font-mono uppercase bg-neutral-800 text-neutral-300 px-2 py-0.5 font-semibold">Frente 04</span>
+                <span class="text-[10px] font-mono bg-neutral-800 text-neutral-400 px-2 py-0.5 font-medium">continuo</span>
+              </div>
+              <h3 class="text-white font-semibold text-sm mb-2">Integraciones &amp; Cloud</h3>
+              <p class="text-neutral-500 text-xs mb-4">Componibilidad profunda con el ecosistema moderno de MLOps empresarial.</p>
+              <ul class="space-y-2.5 text-xs">
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Adaptadores de logging para MLflow y W&amp;B</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Sincronización de pipelines y snapshots con DVC</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Generador de contenedores Docker de serving</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Cómputo remoto en Vertex AI y AWS SageMaker</span>
+                </li>
+                <li class="flex items-start gap-2 text-neutral-400">
+                  <span class="text-neutral-600">&#9675;</span>
+                  <span>Alertas continuas de data drift y concept drift</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="border-t border-neutral-800/60 py-12 px-6">
+    <div class="mx-auto max-w-5xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+        <div>
+          <div class="flex items-center gap-2.5 mb-3">
+            <svg viewBox="0 0 140 140" class="w-5 h-5" fill="none">
+              <rect x="0" y="0" width="119" height="19" fill="#FFF"/>
+              <rect x="0" y="0" width="39" height="139" fill="#FFF"/>
+              <rect x="0" y="120" width="119" height="19" fill="#FFF"/>
+              <rect x="120" y="60" width="19" height="19" fill="#E2622A"/>
+            </svg>
+            <span class="font-display text-white font-semibold text-sm">CapTrain</span>
+          </div>
+          <p class="text-neutral-500 text-[13px]">Una capa de ingeniería ML. Tres interfaces.</p>
+        </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-neutral-500">
+          <a href="https://github.com/masteryogo/captrain" class="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://pypi.org/project/captrain/" class="hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">PyPI</a>
+          <a href="#" class="hover:text-white transition-colors">Docs</a>
+          <a href="../../LICENSE" class="hover:text-white transition-colors">Licencia</a>
+        </div>
+      </div>
+      <div class="mt-8 pt-6 border-t border-neutral-800/60 flex flex-col md:flex-row items-center justify-between gap-3">
+        <p class="text-neutral-600 text-[11px]">&copy; 2026 Contribuidores de CapTrain. Apache 2.0.</p>
+        <p class="text-neutral-600 text-[11px]">Hecho con cuidado por <a href="https://github.com/masteryogo" class="hover:text-neutral-400 transition-colors" target="_blank" rel="noopener noreferrer">João Pedro</a> &amp; la comunidad.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const btn = document.getElementById('mobile-menu-btn');
+    const menu = document.getElementById('mobile-menu');
+    btn.addEventListener('click', () => menu.classList.toggle('hidden'));
+    menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => menu.classList.add('hidden')));
+
+    // Tab switching
+    function switchTab(tab) {
+      ['pip', 'uv', 'source'].forEach(t => {
+        document.getElementById('code-' + t).classList.toggle('hidden', t !== tab);
+        const tabBtn = document.getElementById('tab-' + t);
+        tabBtn.className = t === tab ? 'tab-active px-4 py-1.5 text-[13px] font-mono font-medium transition-colors' : 'tab-inactive px-4 py-1.5 text-[13px] font-mono font-medium transition-colors';
+      });
+    }
+
+    // Copy code
+    function copyCode(tab) {
+      const code = document.getElementById('code-' + tab).querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('#code-' + tab + ' button');
+        btn.textContent = 'copiado!';
+        setTimeout(() => btn.textContent = 'copiar', 2000);
+      });
+    }
+
+    // Language switcher dropdown
+    document.addEventListener('click', function(e) {
+      const switcher = document.getElementById('lang-switcher');
+      const dropdown = document.getElementById('lang-dropdown');
+      if (switcher && dropdown && !switcher.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  </script>
+
+</body>
+</html>
